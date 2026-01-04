@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String        @id @default(uuid())
+  login         String        @unique
+  email         String        @unique
+  password      String
+  messages      Message[]
+  channels      Channel[]     @relation("OwnerChannels")
+  premium       Premium?
+  bots          Bot[]
+  subscriptions Subscription[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  text      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  chatId    String
+  createdAt DateTime @default(now())
+}
+
+model Channel {
+  id        String   @id @default(uuid())
+  title     String
+  ownerId   String
+  owner     User     @relation("OwnerChannels", fields: [ownerId], references: [id])
+  posts     Post[]
+  subscribers Subscription[]
+  createdAt DateTime @default(now())
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  text      String
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  reactions Reaction[]
+  comments  Comment[]
+  createdAt DateTime @default(now())
+}
+
+model Bot {
+  id        String   @id @default(uuid())
+  name      String
+  code      String
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id])
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, channelId])
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  emoji     String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  
+  @@unique([postId, userId])
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  text      String
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Premium {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  until     DateTime
+  createdAt DateTime @default(now())
+}
